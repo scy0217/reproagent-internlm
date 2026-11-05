@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+.conda/
+.venv/
+.venv312/
+__pycache__/
+*.pyc
+*.pyo
+outputs/
+tmp/
+.streamlit/secrets.toml
+.DS_Store
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.log
