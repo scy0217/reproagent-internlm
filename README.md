@@ -44,6 +44,12 @@ Copy-Item .env.example .env
 
 当前确定性数值工具 benchmark 为 8/8 状态判断正确；该结果不冒充完整智能体准确率。完整评测边界和人工标注方案见 [docs/评测报告.md](docs/评测报告.md)。
 
+生成比赛技术文档 PDF：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\generate_competition_pdf.py
+```
+
 ## Streamlit Community Cloud 部署
 
 1. 将本项目推送到 GitHub 仓库，确保 `.env` 未被提交。
