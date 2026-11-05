@@ -34,6 +34,13 @@ Copy-Item .env.example .env
 .\.venv\Scripts\python.exe -m streamlit run app.py
 ```
 
+运行不调用模型的确定性验收：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\preflight.py
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
 ## Streamlit Community Cloud 部署
 
 1. 将本项目推送到 GitHub 仓库，确保 `.env` 未被提交。
@@ -51,6 +58,8 @@ DEMO_ACCESS_CODE = "提交文档中提供给评委的体验码"
 
 6. 部署后使用平台生成的 `https://*.streamlit.app` 地址访问。
 
+部署细节、Docker备用方案和比赛验收清单见 [DEPLOYMENT.md](DEPLOYMENT.md)。
+
 ## 安全说明
 
 - 不执行用户上传的代码，仅进行静态文件清单检查。
@@ -58,6 +67,8 @@ DEMO_ACCESS_CODE = "提交文档中提供给评委的体验码"
 - 单个PDF最大50 MB，复现材料总大小最大20 MB。
 - `.env`、虚拟环境、临时文件和Streamlit secrets均被 `.gitignore` 排除。
 - 论文文本、提取结果和审计结果均按不可信输入处理，防止提示词注入。
+- PDF最多500页、可提取文本最多200万字符，避免异常文档耗尽公网实例资源。
+- 详细威胁边界与密钥轮换方法见 [SECURITY.md](SECURITY.md)。
 
 ## 主要入口
 

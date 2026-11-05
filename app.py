@@ -33,6 +33,7 @@ DEMO_ACCESS_CODE = os.getenv(
 ).strip()
 MAX_PDF_BYTES = 50 * 1024 * 1024
 MAX_SUPPLEMENT_BYTES = 20 * 1024 * 1024
+APP_VERSION = "1.0.0"
 
 st.markdown(
     """
@@ -93,6 +94,18 @@ if DEMO_ACCESS_CODE and not st.session_state.get(
             st.error("体验码不正确。")
 
     st.stop()
+
+
+with st.sidebar:
+    st.markdown("### 运行状态")
+    st.success("服务正常")
+    st.caption(f"ReproAgent v{APP_VERSION}")
+    st.markdown("**模型底座**")
+    st.code(os.getenv("INTERNLM_MODEL", "intern-s2"), language=None)
+    st.markdown("**智能体 Harness**")
+    st.code("LangGraph", language=None)
+    st.markdown("**安全策略**")
+    st.caption("不执行上传代码 · 输入规模限制 · 原文按不可信数据处理")
 
 
 def format_pages(pages: list) -> str:
