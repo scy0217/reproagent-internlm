@@ -1,0 +1,90 @@
+[
+  {
+    "id": "B001",
+    "claim": {
+      "operation": "relative_decrease",
+      "baseline": 129.8623,
+      "result": 51.0934,
+      "claimed_value": 60.7,
+      "tolerance": 0.1
+    },
+    "expected_status": "consistent"
+  },
+  {
+    "id": "B002",
+    "claim": {
+      "operation": "relative_increase",
+      "baseline": 80,
+      "result": 100,
+      "claimed_value": 25,
+      "tolerance": 0.001
+    },
+    "expected_status": "consistent"
+  },
+  {
+    "id": "B003",
+    "claim": {
+      "operation": "percent_change",
+      "baseline": 200,
+      "result": 150,
+      "claimed_value": -25,
+      "tolerance": 0.001
+    },
+    "expected_status": "consistent"
+  },
+  {
+    "id": "B004",
+    "claim": {
+      "operation": "difference",
+      "baseline": 10.5,
+      "result": 13.2,
+      "claimed_value": 2.7,
+      "tolerance": 0.0001
+    },
+    "expected_status": "consistent"
+  },
+  {
+    "id": "B005",
+    "claim": {
+      "operation": "absolute_difference",
+      "baseline": 13.2,
+      "result": 10.5,
+      "claimed_value": 2.7,
+      "tolerance": 0.0001
+    },
+    "expected_status": "consistent"
+  },
+  {
+    "id": "B006",
+    "claim": {
+      "operation": "ratio",
+      "baseline": 4,
+      "result": 10,
+      "claimed_value": 2.5,
+      "tolerance": 0.0001
+    },
+    "expected_status": "consistent"
+  },
+  {
+    "id": "B007",
+    "claim": {
+      "operation": "relative_decrease",
+      "baseline": 100,
+      "result": 75,
+      "claimed_value": 40,
+      "tolerance": 0.1
+    },
+    "expected_status": "inconsistent"
+  },
+  {
+    "id": "B008",
+    "claim": {
+      "operation": "ratio",
+      "baseline": 0,
+      "result": 10,
+      "claimed_value": 10,
+      "tolerance": 0.1
+    },
+    "expected_status": "error"
+  }
+]

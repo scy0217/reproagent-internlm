@@ -39,7 +39,10 @@ Copy-Item .env.example .env
 ```powershell
 .\.venv\Scripts\python.exe scripts\preflight.py
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe scripts\run_numeric_benchmark.py
 ```
+
+当前确定性数值工具 benchmark 为 8/8 状态判断正确；该结果不冒充完整智能体准确率。完整评测边界和人工标注方案见 [docs/评测报告.md](docs/评测报告.md)。
 
 ## Streamlit Community Cloud 部署
 

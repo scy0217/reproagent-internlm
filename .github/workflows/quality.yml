@@ -23,3 +23,5 @@ jobs:
         run: python scripts/preflight.py
       - name: Deterministic unit tests
         run: python -m unittest discover -s tests -v
+      - name: Numeric verification benchmark
+        run: python scripts/run_numeric_benchmark.py
