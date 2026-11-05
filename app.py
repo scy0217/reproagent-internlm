@@ -1,5 +1,7 @@
 from pathlib import Path
 from html import escape as html_escape
+import hmac
+import os
 import time
 
 import streamlit as st
@@ -24,6 +26,13 @@ from core.text_normalizer import (
 from core.scoring_profiles import apply_scoring
 
 st.set_page_config(page_title="ReproAgent", page_icon="🔬", layout="wide")
+
+DEMO_ACCESS_CODE = os.getenv(
+    "DEMO_ACCESS_CODE",
+    "",
+).strip()
+MAX_PDF_BYTES = 50 * 1024 * 1024
+MAX_SUPPLEMENT_BYTES = 20 * 1024 * 1024
 
 st.markdown(
     """
@@ -54,6 +63,36 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+if DEMO_ACCESS_CODE and not st.session_state.get(
+    "demo_authenticated",
+    False,
+):
+    st.title("🔬 ReproAgent 体验验证")
+    st.caption("请输入技术文档中提供的应用体验码。")
+    entered_code = st.text_input(
+        "体验码",
+        type="password",
+        key="demo_access_code_input",
+    )
+
+    if st.button(
+        "进入应用",
+        type="primary",
+        use_container_width=True,
+    ):
+        if hmac.compare_digest(
+            entered_code,
+            DEMO_ACCESS_CODE,
+        ):
+            st.session_state[
+                "demo_authenticated"
+            ] = True
+            st.rerun()
+        else:
+            st.error("体验码不正确。")
+
+    st.stop()
 
 
 def format_pages(pages: list) -> str:
@@ -854,6 +893,19 @@ supplement_files = st.file_uploader(
 )
 
 if uploaded_file is not None:
+    if uploaded_file.size > MAX_PDF_BYTES:
+        st.error("论文PDF不能超过50 MB。")
+        st.stop()
+
+    supplement_total_bytes = sum(
+        item.size
+        for item in supplement_files
+    )
+
+    if supplement_total_bytes > MAX_SUPPLEMENT_BYTES:
+        st.error("复现材料总大小不能超过20 MB。")
+        st.stop()
+
     st.success(
         f"已选择：{uploaded_file.name}"
     )

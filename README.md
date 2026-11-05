@@ -46,6 +46,7 @@ Copy-Item .env.example .env
 INTERNLM_API_KEY = "你的书生API密钥"
 INTERNLM_BASE_URL = "https://chat.intern-ai.org.cn/api/v1/"
 INTERNLM_MODEL = "intern-s2"
+DEMO_ACCESS_CODE = "提交文档中提供给评委的体验码"
 ```
 
 6. 部署后使用平台生成的 `https://*.streamlit.app` 地址访问。
@@ -53,6 +54,8 @@ INTERNLM_MODEL = "intern-s2"
 ## 安全说明
 
 - 不执行用户上传的代码，仅进行静态文件清单检查。
+- 公网部署可通过 `DEMO_ACCESS_CODE` 限制模型调用，防止API额度被滥用。
+- 单个PDF最大50 MB，复现材料总大小最大20 MB。
 - `.env`、虚拟环境、临时文件和Streamlit secrets均被 `.gitignore` 排除。
 - 论文文本、提取结果和审计结果均按不可信输入处理，防止提示词注入。
 
