@@ -28,8 +28,13 @@ from core.scoring_profiles import (
 )
 
 
-REGULAR = "MicrosoftYaHei"
-BOLD = "MicrosoftYaHei-Bold"
+REGULAR = "ReproAgentCJK"
+# Use one embedded CJK face for every style. Registering the same large CJK
+# face twice under different aliases can produce conflicting PDF subsets.
+# Heading hierarchy is still expressed through size, spacing and colour.
+BOLD = REGULAR
+
+REQUIRED_CJK_CHARS = "科研论文可复现性审计报告确认问题证据页码主要结果研究目标对象方法"
 
 
 def _register_first_supported_font(
@@ -49,7 +54,18 @@ def _register_first_supported_font(
         if not path.exists():
             continue
         try:
-            pdfmetrics.registerFont(TTFont(font_name, str(path)))
+            font = TTFont(font_name, str(path))
+            char_map = getattr(font.face, "charToGlyph", {})
+            missing = [
+                char for char in REQUIRED_CJK_CHARS
+                if ord(char) not in char_map
+            ]
+            if missing:
+                errors.append(
+                    f"{path.name}: 缺少字形{''.join(missing[:8])}"
+                )
+                continue
+            pdfmetrics.registerFont(font)
             return
         except Exception as exc:  # Continue to a compatible fallback font.
             errors.append(f"{path.name}: {exc}")
@@ -57,7 +73,7 @@ def _register_first_supported_font(
     details = "; ".join(errors[-2:]) if errors else "未发现候选字体文件"
     raise RuntimeError(
         "未找到ReportLab可嵌入的中文TrueType字体。"
-        "Linux请安装fonts-droid-fallback；"
+        "Linux请安装fonts-wqy-microhei；"
         f"字体探测结果：{details}"
     )
 
@@ -66,26 +82,15 @@ def _register_fonts() -> None:
     regular_candidates = [
             r"C:\Windows\Fonts\msyh.ttc",
             r"C:\Windows\Fonts\msyh.ttf",
-            "/usr/share/fonts/truetype/unfonts-core/UnDotum.ttf",
+            "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
             "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+            "/usr/share/fonts/truetype/unfonts-core/UnDotum.ttf",
             "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
             "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
-    ]
-    bold_candidates = [
-            r"C:\Windows\Fonts\msyhbd.ttc",
-            r"C:\Windows\Fonts\msyhbd.ttf",
-            # Use a genuinely separate bold face. Registering the same CJK
-            # font file under two aliases can corrupt ReportLab font subsets
-            # and make all regular body text invisible in the generated PDF.
-            "/usr/share/fonts/truetype/unfonts-core/UnDotumBold.ttf",
-            "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
-            "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
     ]
 
     if REGULAR not in pdfmetrics.getRegisteredFontNames():
         _register_first_supported_font(REGULAR, regular_candidates)
-    if BOLD not in pdfmetrics.getRegisteredFontNames():
-        _register_first_supported_font(BOLD, bold_candidates)
     pdfmetrics.registerFontFamily(
         REGULAR,
         normal=REGULAR,
