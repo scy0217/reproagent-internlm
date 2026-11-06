@@ -1,6 +1,7 @@
 from pathlib import Path
 from html import escape as html_escape
 import hmac
+import inspect
 import os
 import time
 
@@ -44,7 +45,7 @@ def get_app_setting(name: str, default: str = "") -> str:
 DEMO_ACCESS_CODE = get_app_setting("DEMO_ACCESS_CODE")
 MAX_PDF_BYTES = 50 * 1024 * 1024
 MAX_SUPPLEMENT_BYTES = 20 * 1024 * 1024
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.1.1"
 
 st.markdown(
     """
@@ -1259,19 +1260,31 @@ if "paper_pages" in st.session_state:
 
                 status_box.info(message)
 
-            final_state = run_langgraph_audit(
-                pages=pages,
-                source_filename=(
+            runtime_kwargs = {
+                "pages": pages,
+                "source_filename": (
                     uploaded_file.name
                     if uploaded_file
                     else "论文.pdf"
                 ),
-                plan=plan,
-                supplement_analysis=st.session_state.get(
+                "supplement_analysis": st.session_state.get(
                     "supplement_analysis",
                     {},
                 ),
-                progress_callback=handle_graph_progress,
+                "progress_callback": handle_graph_progress,
+            }
+            if "plan" in inspect.signature(
+                run_langgraph_audit
+            ).parameters:
+                runtime_kwargs["plan"] = plan
+            else:
+                status_box.warning(
+                    "云端正在更新智能体运行时，"
+                    "本次将使用兼容模式继续执行。"
+                )
+
+            final_state = run_langgraph_audit(
+                **runtime_kwargs
             )
 
             duration_seconds = round(
