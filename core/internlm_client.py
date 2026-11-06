@@ -9,15 +9,30 @@ from openai import OpenAI
 ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(ENV_PATH)
 
-API_KEY = os.getenv("INTERNLM_API_KEY")
-BASE_URL = os.getenv(
+
+def _get_setting(name: str, default: str = "") -> str:
+    """Read local environment variables or Streamlit Cloud secrets."""
+
+    value = os.getenv(name)
+    if value:
+        return value.strip()
+
+    try:
+        import streamlit as st
+
+        value = st.secrets.get(name, default)
+    except (FileNotFoundError, KeyError, RuntimeError):
+        value = default
+
+    return str(value).strip()
+
+
+API_KEY = _get_setting("INTERNLM_API_KEY")
+BASE_URL = _get_setting(
     "INTERNLM_BASE_URL",
     "https://chat.intern-ai.org.cn/api/v1/",
 )
-MODEL_NAME = os.getenv(
-    "INTERNLM_MODEL",
-    "intern-s2",
-)
+MODEL_NAME = _get_setting("INTERNLM_MODEL", "intern-s2")
 
 
 def call_model(
@@ -30,7 +45,8 @@ def call_model(
 
     if not API_KEY:
         raise RuntimeError(
-            "没有找到 INTERNLM_API_KEY，请检查项目根目录的 .env 文件。"
+            "没有找到 INTERNLM_API_KEY。云端请在 Streamlit App Settings "
+            "的 Secrets 中配置；本地请在项目根目录的 .env 中配置。"
         )
 
     client = OpenAI(

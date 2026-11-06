@@ -27,10 +27,21 @@ from core.scoring_profiles import apply_scoring
 
 st.set_page_config(page_title="ReproAgent", page_icon="🔬", layout="wide")
 
-DEMO_ACCESS_CODE = os.getenv(
-    "DEMO_ACCESS_CODE",
-    "",
-).strip()
+
+def get_app_setting(name: str, default: str = "") -> str:
+    """Read local environment variables or Streamlit Cloud secrets."""
+
+    value = os.getenv(name)
+    if value:
+        return value.strip()
+    try:
+        value = st.secrets.get(name, default)
+    except (FileNotFoundError, KeyError, RuntimeError):
+        value = default
+    return str(value).strip()
+
+
+DEMO_ACCESS_CODE = get_app_setting("DEMO_ACCESS_CODE")
 MAX_PDF_BYTES = 50 * 1024 * 1024
 MAX_SUPPLEMENT_BYTES = 20 * 1024 * 1024
 APP_VERSION = "1.0.0"
@@ -101,7 +112,7 @@ with st.sidebar:
     st.success("服务正常")
     st.caption(f"ReproAgent v{APP_VERSION}")
     st.markdown("**模型底座**")
-    st.code(os.getenv("INTERNLM_MODEL", "intern-s2"), language=None)
+    st.code(get_app_setting("INTERNLM_MODEL", "intern-s2"), language=None)
     st.markdown("**智能体 Harness**")
     st.code("LangGraph", language=None)
     st.markdown("**安全策略**")
