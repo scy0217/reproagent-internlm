@@ -66,6 +66,7 @@ def _register_fonts() -> None:
     regular_candidates = [
             r"C:\Windows\Fonts\msyh.ttc",
             r"C:\Windows\Fonts\msyh.ttf",
+            "/usr/share/fonts/truetype/unfonts-core/UnDotum.ttf",
             "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
             "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
             "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
@@ -73,9 +74,10 @@ def _register_fonts() -> None:
     bold_candidates = [
             r"C:\Windows\Fonts\msyhbd.ttc",
             r"C:\Windows\Fonts\msyhbd.ttf",
-            # Droid Sans Fallback has no dedicated bold face, but using the
-            # regular TrueType face is preferable to a failed PDF export.
-            "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+            # Use a genuinely separate bold face. Registering the same CJK
+            # font file under two aliases can corrupt ReportLab font subsets
+            # and make all regular body text invisible in the generated PDF.
+            "/usr/share/fonts/truetype/unfonts-core/UnDotumBold.ttf",
             "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
             "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
     ]
@@ -84,6 +86,13 @@ def _register_fonts() -> None:
         _register_first_supported_font(REGULAR, regular_candidates)
     if BOLD not in pdfmetrics.getRegisteredFontNames():
         _register_first_supported_font(BOLD, bold_candidates)
+    pdfmetrics.registerFontFamily(
+        REGULAR,
+        normal=REGULAR,
+        bold=BOLD,
+        italic=REGULAR,
+        boldItalic=BOLD,
+    )
 
 
 def _safe(value) -> str:
