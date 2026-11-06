@@ -84,6 +84,10 @@ def run_reproducibility_auditor(
     audit_result = audit_reproducibility(
         pages=pages,
         extraction_result=extraction_result,
+        max_pages=state.get(
+            "audit_page_limit",
+            30,
+        ),
     )
 
     return {
@@ -166,6 +170,10 @@ def run_evidence_verifier(
         pages=pages,
         extraction_result=extraction_result,
         audit_result=audit_for_verification,
+        max_pages=state.get(
+            "evidence_page_limit",
+            35,
+        ),
     )
 
     if numeric_result is not None:
@@ -198,9 +206,15 @@ def run_pdf_report_generator(
         "论文.pdf",
     )
 
+    report_result = dict(verified_result)
+    if state.get("agent_execution"):
+        report_result["agent_execution"] = state[
+            "agent_execution"
+        ]
+
     pdf_bytes = generate_pdf_report(
         extraction_result=extraction_result,
-        verified_result=verified_result,
+        verified_result=report_result,
         source_filename=source_filename,
     )
 

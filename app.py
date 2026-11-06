@@ -574,6 +574,36 @@ def render_agent_plan(
 
     st.info(f"任务目标：{goal}")
 
+    policy = plan.get("execution_policy", {})
+    if isinstance(policy, dict):
+        policy_columns = st.columns(3)
+        policy_columns[0].metric(
+            "数值工具策略",
+            {
+                "auto": "自动判断",
+                "required": "强制执行",
+                "skip": "计划跳过",
+            }.get(
+                policy.get("numeric_verification", "auto"),
+                "自动判断",
+            ),
+        )
+        policy_columns[1].metric(
+            "证据检查深度",
+            {
+                "focused": "聚焦",
+                "standard": "标准",
+                "deep": "深入",
+            }.get(
+                policy.get("evidence_depth", "standard"),
+                "标准",
+            ),
+        )
+        policy_columns[2].metric(
+            "最大反思轮数",
+            policy.get("max_reflections", 2),
+        )
+
     plan_rows = []
 
     for step in plan.get("steps", []):
@@ -631,6 +661,64 @@ def render_agent_plan(
         )
 
 
+def render_plan_execution(summary: dict) -> None:
+    """展示Planner计划与LangGraph实际执行的一致性。"""
+
+    st.markdown("#### 计划—实际执行对照")
+    columns = st.columns(4)
+    columns[0].metric(
+        "计划执行一致率",
+        f"{summary.get('consistency_rate', 0)}%",
+    )
+    columns[1].metric(
+        "计划步骤",
+        summary.get("planned_step_count", 0),
+    )
+    columns[2].metric(
+        "对齐步骤",
+        summary.get("aligned_step_count", 0),
+    )
+    columns[3].metric(
+        "安全补充工具",
+        len(summary.get("safety_added_tools", [])),
+    )
+
+    status_labels = {
+        "completed": "已完成",
+        "conditionally_skipped": "条件跳过",
+        "scheduled": "已调度",
+        "failed": "失败",
+        "not_run": "未执行",
+    }
+    rows = []
+    for step in summary.get("steps", []):
+        rows.append({
+            "步骤": step.get("id", ""),
+            "计划工具": step.get("tool", ""),
+            "计划理由": step.get("reason", ""),
+            "实际状态": status_labels.get(
+                step.get("status", ""),
+                step.get("status", "未知"),
+            ),
+        })
+    if rows:
+        st.dataframe(
+            rows,
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    route_reason = summary.get("numeric_route_reason", "")
+    if route_reason:
+        st.caption(f"数值工具路由：{route_reason}")
+
+    safety_tools = summary.get("safety_added_tools", [])
+    if safety_tools:
+        st.caption(
+            "安全编排自动补充：" + "、".join(safety_tools)
+        )
+
+
 def render_agent_architecture() -> None:
     """展示比赛演示用的智能体编排架构。"""
 
@@ -665,8 +753,8 @@ def render_agent_architecture() -> None:
             unsafe_allow_html=True,
         )
         st.caption(
-            "置信度低于75分时，LangGraph会扩大原文证据范围并自动复核，"
-            "最多反思两轮；没有数值主张时会自动跳过Python数值核验。"
+            "Intern-S2 Planner会选择数值工具策略、证据检查深度和反思上限；"
+            "LangGraph按计划执行并保留安全兜底，最后输出计划—实际对照。"
         )
 
 
@@ -756,7 +844,7 @@ def render_node_io_summary(
             "节点": "evidence_verifier",
             "输入摘要": (
                 f"候选问题与最多"
-                f"{audit.get('max_verification_pages', 35)}页证据"
+                f"{state.get('evidence_page_limit', 35)}页证据"
             ),
             "输出摘要": (
                 f"确认{len(verified.get('verified_issues', []))}项，"
@@ -800,6 +888,7 @@ def render_execution_trace(
         "numeric_check_skipped": "⏭️ 跳过数值核验",
         "confidence_evaluated": "🎯 置信度评估",
         "reflection_triggered": "🔁 触发反思复核",
+        "plan_execution_summarized": "🧭 计划执行已对照",
         "graph_completed": "🏁 流程完成",
     }
 
@@ -826,10 +915,19 @@ def render_execution_trace(
             )
         elif event == "numeric_check_required":
             details = (
-                f"发现 {item.get('claim_count', 0)} 条数值主张"
+                f"{item.get('reason', '')}；"
+                f"主张数 {item.get('claim_count', 0)}"
             )
         elif event == "numeric_check_skipped":
-            details = "未发现可确定性计算的数值主张"
+            details = item.get(
+                "reason",
+                "未发现可确定性计算的数值主张",
+            )
+        elif event == "plan_execution_summarized":
+            details = (
+                f"计划{item.get('planned_step_count', 0)}步，"
+                f"一致率{item.get('consistency_rate', 0)}%"
+            )
 
         rows.append(
             {
@@ -1101,6 +1199,7 @@ if "paper_pages" in st.session_state:
                 "verify_evidence": "原文证据复核",
                 "inspect_confidence": "证据置信度评估",
                 "expand_evidence": "反思与证据范围扩展",
+                "summarize_plan": "计划与实际执行对照",
                 "generate_report": "PDF审计报告生成",
                 "finalize": "流程收尾",
             }
@@ -1112,6 +1211,7 @@ if "paper_pages" in st.session_state:
                 "verify_evidence": 0.70,
                 "inspect_confidence": 0.78,
                 "expand_evidence": 0.80,
+                "summarize_plan": 0.88,
                 "generate_report": 0.92,
                 "finalize": 0.98,
             }
@@ -1166,6 +1266,7 @@ if "paper_pages" in st.session_state:
                     if uploaded_file
                     else "论文.pdf"
                 ),
+                plan=plan,
                 supplement_analysis=st.session_state.get(
                     "supplement_analysis",
                     {},
@@ -1275,6 +1376,15 @@ if "paper_pages" in st.session_state:
                     [],
                 )
             )
+
+        if agent_state.get("agent_execution"):
+            with st.expander(
+                "查看计划—实际执行对照",
+                expanded=True,
+            ):
+                render_plan_execution(
+                    agent_state["agent_execution"]
+                )
 
         with st.expander(
             "查看节点输入输出摘要",

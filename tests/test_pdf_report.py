@@ -27,6 +27,20 @@ class PdfReportTests(unittest.TestCase):
             "verified_strengths": ["研究目标清晰"],
             "rejected_issues": [],
             "score_breakdown": {},
+            "agent_execution": {
+                "planner_source": "intern-s2",
+                "consistency_rate": 100,
+                "execution_policy": {
+                    "numeric_verification": "auto",
+                    "evidence_depth": "deep",
+                    "max_reflections": 1,
+                },
+                "steps": [{
+                    "id": "S1",
+                    "tool": "experiment_extractor",
+                    "status": "completed",
+                }],
+            },
         }
 
         pdf_bytes = generate_pdf_report(
@@ -44,6 +58,8 @@ class PdfReportTests(unittest.TestCase):
             "主要结果",
             "研究目标",
             "验证科研论文可复现性审计报告的中文字形完整性",
+            "智能体计划与执行",
+            "计划执行一致率：100%",
         ]
         for phrase in required_phrases:
             self.assertIn(phrase, extracted_text)

@@ -339,6 +339,75 @@ def generate_pdf_report(
         ]))
         story.extend([box, Spacer(1, 3 * mm)])
 
+    agent_execution = verified_result.get("agent_execution", {}) or {}
+    if isinstance(agent_execution, dict) and agent_execution:
+        story.append(Paragraph("智能体计划与执行", styles["h1"]))
+        policy = agent_execution.get("execution_policy", {}) or {}
+        policy_labels = {
+            "auto": "自动判断",
+            "required": "强制执行",
+            "skip": "计划跳过",
+            "focused": "聚焦",
+            "standard": "标准",
+            "deep": "深入",
+        }
+        story.append(Paragraph(
+            "规划来源："
+            f"{_safe(agent_execution.get('planner_source'))}；"
+            "计划执行一致率："
+            f"{_safe(agent_execution.get('consistency_rate'))}%；"
+            "数值工具策略："
+            f"{_safe(policy_labels.get(policy.get('numeric_verification'), policy.get('numeric_verification')))}；"
+            "证据深度："
+            f"{_safe(policy_labels.get(policy.get('evidence_depth'), policy.get('evidence_depth')))}；"
+            "最大反思："
+            f"{_safe(policy.get('max_reflections'))}轮。",
+            styles["body"],
+        ))
+        execution_rows = [[
+            Paragraph("步骤", styles["metric_label"]),
+            Paragraph("计划工具", styles["metric_label"]),
+            Paragraph("实际状态", styles["metric_label"]),
+        ]]
+        execution_status = {
+            "completed": "已完成",
+            "conditionally_skipped": "条件跳过",
+            "scheduled": "已调度",
+            "failed": "失败",
+            "not_run": "未执行",
+        }
+        for step in agent_execution.get("steps", []):
+            if not isinstance(step, dict):
+                continue
+            execution_rows.append([
+                Paragraph(_safe(step.get("id")), styles["small"]),
+                Paragraph(_safe(step.get("tool")), styles["small"]),
+                Paragraph(
+                    _safe(execution_status.get(
+                        step.get("status"),
+                        step.get("status"),
+                    )),
+                    styles["small"],
+                ),
+            ])
+        if len(execution_rows) > 1:
+            execution_table = Table(
+                execution_rows,
+                colWidths=[25 * mm, 95 * mm, 48 * mm],
+                repeatRows=1,
+            )
+            execution_table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#DBEAFE")),
+                ("BOX", (0, 0), (-1, -1), .4, colors.HexColor("#CBD5E1")),
+                ("INNERGRID", (0, 0), (-1, -1), .3, colors.HexColor("#E2E8F0")),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ]))
+            story.extend([execution_table, Spacer(1, 3 * mm)])
+
     story.append(Paragraph("一、研究信息概览", styles["h1"]))
     story.append(Paragraph(f"<b>研究目标：</b>{_safe(extraction_result.get('research_goal'))}", styles["body"]))
     story.append(Paragraph(f"<b>研究对象：</b>{_safe(extraction_result.get('research_object'))}", styles["body"]))

@@ -14,12 +14,19 @@ def verify_audit(
     pages: list[dict],
     extraction_result: dict,
     audit_result: dict,
+    max_pages: int = 35,
 ) -> dict:
     """回查原文，验证并去重审计问题。"""
 
+    try:
+        max_pages = int(max_pages)
+    except (TypeError, ValueError):
+        max_pages = 35
+    max_pages = max(10, min(max_pages, 80))
+
     selected_pages = select_relevant_pages(
         pages,
-        max_pages=35,
+        max_pages=max_pages,
     )
     paper_text = pages_to_text(selected_pages)
 

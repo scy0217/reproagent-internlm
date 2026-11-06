@@ -18,6 +18,11 @@ AVAILABLE_TOOLS = {
 PLAN_SCHEMA = {
     "document_type": "",
     "goal": "",
+    "execution_policy": {
+        "numeric_verification": "auto",
+        "evidence_depth": "standard",
+        "max_reflections": 2,
+    },
     "constraints": [],
     "risks": [],
     "steps": [
@@ -163,6 +168,11 @@ def create_fallback_plan(
     return {
         "document_type": "scientific_paper",
         "goal": goal,
+        "execution_policy": {
+            "numeric_verification": "auto",
+            "evidence_depth": "standard",
+            "max_reflections": 2,
+        },
         "constraints": [
             "所有问题必须提供原文证据",
             "禁止执行未注册工具",
@@ -294,6 +304,40 @@ def validate_plan(plan: dict) -> dict:
     plan["steps"] = valid_steps
     plan["planner_source"] = "intern-s2"
 
+    raw_policy = plan.get("execution_policy", {})
+    if not isinstance(raw_policy, dict):
+        raw_policy = {}
+
+    numeric_policy = str(
+        raw_policy.get("numeric_verification", "auto")
+    ).strip().lower()
+    if numeric_policy not in {"auto", "required", "skip"}:
+        numeric_policy = "auto"
+
+    evidence_depth = str(
+        raw_policy.get("evidence_depth", "standard")
+    ).strip().lower()
+    if evidence_depth not in {"focused", "standard", "deep"}:
+        evidence_depth = "standard"
+
+    try:
+        max_reflections = int(
+            raw_policy.get("max_reflections", 2)
+        )
+    except (TypeError, ValueError):
+        max_reflections = 2
+
+    plan["execution_policy"] = {
+        "numeric_verification": numeric_policy,
+        "evidence_depth": evidence_depth,
+        "max_reflections": max(0, min(max_reflections, 2)),
+    }
+
+    document_type = str(
+        plan.get("document_type", "scientific_paper")
+    ).strip()
+    plan["document_type"] = document_type or "scientific_paper"
+
     if not isinstance(
         plan.get("constraints"),
         list,
@@ -366,6 +410,13 @@ def create_audit_plan(
 14. numeric_verifier必须依赖reproducibility_auditor。
 15. evidence_verifier应在numeric_verifier之后运行，
     但没有数值主张时可以跳过numeric_verifier。
+16. execution_policy.numeric_verification只能是auto、required或skip。
+17. execution_policy.evidence_depth只能是focused、standard或deep。
+18. execution_policy.max_reflections只能是0到2的整数。
+19. 对长论文、公式或表格较多的论文优先选择deep；
+    对短且结构清晰的论文可选择focused。
+20. skip仅表示Planner认为不需要数值工具；若运行时发现明确数值主张，
+    安全路由仍可覆盖该决定并调用确定性核验。
 """
 
     user_prompt = f"""

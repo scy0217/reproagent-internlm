@@ -98,12 +98,19 @@ def normalize_audit_result(
 def audit_reproducibility(
     pages: list[dict],
     extraction_result: dict,
+    max_pages: int = 30,
 ) -> dict:
     """审计论文中的缺失项、矛盾和证据问题。"""
 
+    try:
+        max_pages = int(max_pages)
+    except (TypeError, ValueError):
+        max_pages = 30
+    max_pages = max(10, min(max_pages, 80))
+
     selected_pages = select_relevant_pages(
         pages,
-        max_pages=30,
+        max_pages=max_pages,
     )
 
     paper_text = pages_to_text(
