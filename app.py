@@ -44,7 +44,7 @@ def get_app_setting(name: str, default: str = "") -> str:
 DEMO_ACCESS_CODE = get_app_setting("DEMO_ACCESS_CODE")
 MAX_PDF_BYTES = 50 * 1024 * 1024
 MAX_SUPPLEMENT_BYTES = 20 * 1024 * 1024
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 
 st.markdown(
     """
