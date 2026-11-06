@@ -32,47 +32,58 @@ REGULAR = "MicrosoftYaHei"
 BOLD = "MicrosoftYaHei-Bold"
 
 
-def _find_font(candidates: list[str]) -> Path:
-    """在Windows与Linux部署环境中查找中文字体。"""
+def _register_first_supported_font(
+    font_name: str,
+    candidates: list[str],
+) -> None:
+    """Register the first existing font that ReportLab can embed.
 
+    Some Linux Noto CJK collections use PostScript/CFF outlines. They exist on
+    disk but are not supported by ReportLab's ``TTFont`` implementation, so a
+    successful path lookup alone is not enough.
+    """
+
+    errors: list[str] = []
     for candidate in candidates:
         path = Path(candidate)
+        if not path.exists():
+            continue
+        try:
+            pdfmetrics.registerFont(TTFont(font_name, str(path)))
+            return
+        except Exception as exc:  # Continue to a compatible fallback font.
+            errors.append(f"{path.name}: {exc}")
 
-        if path.exists():
-            return path
-
+    details = "; ".join(errors[-2:]) if errors else "未发现候选字体文件"
     raise RuntimeError(
-        "未找到可用中文字体。Windows请安装微软雅黑，"
-        "Linux请安装fonts-noto-cjk。"
+        "未找到ReportLab可嵌入的中文TrueType字体。"
+        "Linux请安装fonts-droid-fallback；"
+        f"字体探测结果：{details}"
     )
 
 
 def _register_fonts() -> None:
-    regular_path = _find_font(
-        [
+    regular_candidates = [
             r"C:\Windows\Fonts\msyh.ttc",
             r"C:\Windows\Fonts\msyh.ttf",
+            "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
             "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
             "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
-        ]
-    )
-    bold_path = _find_font(
-        [
+    ]
+    bold_candidates = [
             r"C:\Windows\Fonts\msyhbd.ttc",
             r"C:\Windows\Fonts\msyhbd.ttf",
+            # Droid Sans Fallback has no dedicated bold face, but using the
+            # regular TrueType face is preferable to a failed PDF export.
+            "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
             "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
             "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
-        ]
-    )
+    ]
 
     if REGULAR not in pdfmetrics.getRegisteredFontNames():
-        pdfmetrics.registerFont(
-            TTFont(REGULAR, str(regular_path))
-        )
+        _register_first_supported_font(REGULAR, regular_candidates)
     if BOLD not in pdfmetrics.getRegisteredFontNames():
-        pdfmetrics.registerFont(
-            TTFont(BOLD, str(bold_path))
-        )
+        _register_first_supported_font(BOLD, bold_candidates)
 
 
 def _safe(value) -> str:

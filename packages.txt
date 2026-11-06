@@ -1,1 +1,2 @@
+fonts-droid-fallback
 fonts-noto-cjk
